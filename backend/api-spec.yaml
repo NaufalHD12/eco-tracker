@@ -1,0 +1,1861 @@
+openapi: 3.0.3
+info:
+  title: EcoTrack API
+  description: API for EcoTrack - Personal Carbon Footprint Tracker
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Development server
+
+paths:
+  /auth/login:
+    post:
+      tags: ["Auth"]
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: user@example.com
+              password: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                user:
+                  id: "507f1f77bcf86cd799439011"
+                  name: John Doe
+                  email: user@example.com
+                  targetEmission: 100
+                  totalEmission: 62.5
+                  totalTrees: 5
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Invalid email or password"
+                errors: []
+        '429':
+          description: Too many login attempts
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Too many login attempts. Please try again later."
+                errors: []
+
+  /auth/register:
+    post:
+      tags: ["Auth"]
+      summary: User registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              name: John Doe
+              email: user@example.com
+              password: password123
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "User with this email already exists"
+                errors: []
+
+  /activities:
+    get:
+      tags: ["Activities"]
+      security:
+        - bearerAuth: []
+      summary: Get user activity history
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [Transportation, Food, Energy, Shopping]
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Filter activities from this date"
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Filter activities until this date"
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [date, emission]
+            default: date
+          description: "Sort activities by field"
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: "Sort order"
+      responses:
+        '200':
+          description: List of activities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivitiesResponse'
+              example:
+                activities:
+                  - id: "507f1f77bcf86cd799439011"
+                    category: Transportation
+                    details: Medium petrol car 10km
+                    emission: 2.5
+                    date: 2023-10-01
+                  - id: "507f1f77bcf86cd799439012"
+                    category: Food
+                    details: Beef 1kg
+                    emission: 60
+                    date: 2023-10-01
+                total: 62.5
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+    post:
+      tags: ["Activities"]
+      security:
+        - bearerAuth: []
+      summary: Log new activity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivityRequest'
+            example:
+              category: Transportation
+              note: Go to office
+              transportData:
+                distance: 15
+                vehicleType: car_medium_petrol
+      responses:
+        '201':
+          description: Activity logged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /activities/{id}:
+    get:
+      tags: ["Activities"]
+      security:
+        - bearerAuth: []
+      summary: Get a single activity by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Activity details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Activity not found
+    put:
+      tags: ["Activities"]
+      security:
+        - bearerAuth: []
+      summary: Update an existing activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivityRequest'
+      responses:
+        '200':
+          description: Activity updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Activity not found
+    delete:
+      tags: ["Activities"]
+      security:
+        - bearerAuth: []
+      summary: Delete an activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Activity deleted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Activity not found
+
+  /profile:
+    get:
+      tags: ["Users"]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: "507f1f77bcf86cd799439011"
+                name: John Doe
+                email: user@example.com
+                targetEmission: 100
+                totalEmission: 62.5
+                totalTrees: 5
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+    put:
+      tags: ["Users"]
+      summary: Update current user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+            example:
+              name: John Doe Updated
+              targetEmission: 120
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /dashboard:
+    get:
+      tags: ["Dashboard"]
+      security:
+        - bearerAuth: []
+      summary: Get dashboard data with aggregated emissions
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [weekly, monthly, yearly]
+            default: weekly
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Custom start date (overrides period)"
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: "Custom end date (overrides period)"
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+              example:
+                summary:
+                  totalEmission: 45.5
+                  targetEmission: 100
+                  dailyAverage: 6.5
+                  totalTrees: 5
+                chartData:
+                  labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                  data: [10, 5.5, 8, 0, 12, 7, 3]
+                categoryBreakdown:
+                  - category: "Transportation"
+                    percentage: 40
+                    total: 18.2
+                  - category: "Food"
+                    percentage: 50
+                    total: 22.75
+                  - category: "Energy"
+                    percentage: 10
+                    total: 4.55
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /challenges:
+    get:
+      tags: ["Challenges"]
+      security:
+        - bearerAuth: []
+      summary: Get list of all challenges
+      responses:
+        '200':
+          description: List of challenges
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChallengesResponse'
+              example:
+                challenges:
+                  - id: "507f1f77bcf86cd799439011"
+                    title: "Meat-Free Month"
+                    description: "Don't eat meat for a month"
+                    startDate: "2023-10-01"
+                    endDate: "2023-10-31"
+                    status: "active"
+                  - id: "507f1f77bcf86cd799439012"
+                    title: "Green Transportation"
+                    description: "Use public transport or bicycle"
+                    startDate: "2023-11-01"
+                    endDate: "2023-11-30"
+                    status: "upcoming"
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /challenges/active:
+    get:
+      tags: ["Challenges"]
+      security:
+        - bearerAuth: []
+      summary: Get currently active challenges
+      responses:
+        '200':
+          description: Active challenges
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChallengesResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /challenges/{id}:
+    get:
+      tags: ["Challenges"]
+      security:
+        - bearerAuth: []
+      summary: Get details of a specific challenge
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Challenge details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Challenge'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Challenge not found
+
+  /challenges/{id}/join:
+    post:
+      tags: ["Challenges"]
+      security:
+        - bearerAuth: []
+      summary: Join a challenge
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully joined challenge
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: "Successfully joined challenge"
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Challenge not found
+        '409':
+          description: Already joined
+
+  /challenges/{id}/leaderboard:
+    get:
+      tags: ["Challenges"]
+      security:
+        - bearerAuth: []
+      summary: Get leaderboard for a specific challenge
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Challenge leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Challenge not found
+
+  /factors:
+    get:
+      tags: ["Utilities"]
+      security:
+        - bearerAuth: []
+      summary: Get emission factors data for forms (Based on DEFRA 2024)
+      responses:
+        '200':
+          description: Emission factors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FactorsResponse'
+              example:
+                transport:
+                  - key: "car_medium_petrol"
+                    label: "Medium petrol car (per km)"
+                    unit: "km"
+                    factor: 0.18887
+                  - key: "motorcycle_avg"
+                    label: "Average motorcycle (per km)"
+                    unit: "km"
+                    factor: 0.11543
+                  - key: "bus_local"
+                    label: "Local bus (per km)"
+                    unit: "km"
+                    factor: 0.13783
+                  - key: "rail_national"
+                    label: "National rail (per km)"
+                    unit: "km"
+                    factor: 0.03513
+                food:
+                  - key: "beef_kg"
+                    label: "Beef (per kg)"
+                    unit: "kg"
+                    factor: 60.0
+                  - key: "chicken_kg"
+                    label: "Chicken (per kg)"
+                    unit: "kg"
+                    factor: 7.5
+                  - key: "rice_kg"
+                    label: "Rice (per kg)"
+                    unit: "kg"
+                    factor: 2.5
+                energy:
+                  - key: "grid_uk"
+                    label: "UK Grid electricity (per kWh)"
+                    unit: "kWh"
+                    factor: 0.20709
+                shopping:
+                  - key: "clothing_item"
+                    label: "Clothing item"
+                    unit: "item"
+                    factor: 7.6
+                  - key: "electronics_item"
+                    label: "Electronics item"
+                    unit: "item"
+                    factor: 15.0
+
+  /profile/change-password:
+    put:
+      tags: ["Users"]
+      security:
+        - bearerAuth: []
+      summary: Change user password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+            example:
+              currentPassword: "oldpassword123"
+              newPassword: "newpassword456"
+      responses:
+        '204':
+          description: Password changed successfully
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Validation failed"
+                errors:
+                  - field: "newPassword"
+                    message: "Password must be at least 6 characters"
+        '401':
+          description: Unauthorized or incorrect current password
+        '403':
+          description: Forbidden
+
+
+
+  /quizzes:
+    get:
+      tags: ["Quizzes"]
+      security:
+        - bearerAuth: []
+      summary: Get all quizzes with filtering and pagination
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: ["Carbon Footprint", "Climate Change", "Sustainable Living"]
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+            enum: ["Easy", "Medium", "Hard"]
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+            default: true
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: ["createdAt", "title", "difficulty"]
+            default: "createdAt"
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: ["asc", "desc"]
+            default: "desc"
+      responses:
+        '200':
+          description: List of quizzes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizzesResponse'
+              example:
+                message: "Quizzes retrieved successfully"
+                quizzes:
+                  - id: "507f1f77bcf86cd799439011"
+                    title: "Carbon Footprint Basics"
+                    description: "Learn about carbon footprint"
+                    category: "Carbon Footprint"
+                    difficulty: "Easy"
+                    totalQuestions: 5
+                    totalPoints: 50
+                    isActive: true
+                    createdAt: "2023-10-01T00:00:00.000Z"
+                pagination:
+                  total: 25
+                  page: 1
+                  limit: 10
+                  totalPages: 3
+                  hasNext: true
+                  hasPrev: false
+                cooldownInfo:
+                  recentlyCompleted: 2
+                  nextAvailableDate: "2023-10-31T00:00:00.000Z"
+                  cooldownDays: 30
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+    post:
+      tags: ["Quizzes"]
+      security:
+        - bearerAuth: []
+      summary: Create a new quiz (Admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuizRequest'
+      responses:
+        '201':
+          description: Quiz created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizResponse'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /quizzes/active:
+    get:
+      tags: ["Quizzes"]
+      security:
+        - bearerAuth: []
+      summary: Get currently active quizzes
+      responses:
+        '200':
+          description: Active quizzes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActiveQuizzesResponse'
+              example:
+                message: "Active quizzes retrieved successfully"
+                quizzes:
+                  - id: "507f1f77bcf86cd799439011"
+                    title: "Carbon Footprint Basics"
+                    description: "Learn about carbon footprint"
+                    category: "Carbon Footprint"
+                    difficulty: "Easy"
+                    totalQuestions: 5
+                    totalPoints: 50
+                    isActive: true
+                    createdAt: "2023-10-01T00:00:00.000Z"
+                cooldownInfo:
+                  recentlyCompleted: 1
+                  nextAvailableDate: "2023-10-31T00:00:00.000Z"
+                  cooldownDays: 30
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /quizzes/{id}:
+    get:
+      tags: ["Quizzes"]
+      security:
+        - bearerAuth: []
+      summary: Get a single quiz by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quiz details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizDetailResponse'
+              example:
+                message: "Quiz retrieved successfully"
+                quiz:
+                  id: "507f1f77bcf86cd799439011"
+                  title: "Carbon Footprint Basics"
+                  description: "Learn about carbon footprint"
+                  category: "Carbon Footprint"
+                  difficulty: "Easy"
+                  totalQuestions: 5
+                  totalPoints: 50
+                  isActive: true
+                  questions:
+                    - question: "What is carbon footprint?"
+                      options: ["A type of shoe", "Amount of CO2 emissions", "Carbonated drink", "None of the above"]
+                      points: 10
+                      category: "Basics"
+                hasAttempted: false
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Quiz not found
+    put:
+      tags: ["Quizzes"]
+      security:
+        - bearerAuth: []
+      summary: Update a quiz (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuizRequest'
+      responses:
+        '200':
+          description: Quiz updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizResponse'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Quiz not found
+    delete:
+      tags: ["Quizzes"]
+      security:
+        - bearerAuth: []
+      summary: Delete a quiz (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Quiz deleted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Quiz not found
+
+  /quizzes/{id}/attempt:
+    post:
+      tags: ["Quizzes"]
+      security:
+        - bearerAuth: []
+      summary: Start or continue a quiz attempt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quiz attempt started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizAttemptResponse'
+              example:
+                message: "Quiz attempt started successfully"
+                attempt:
+                  id: "507f1f77bcf86cd799439012"
+                  status: "in_progress"
+                  startedAt: "2023-10-01T10:00:00.000Z"
+                  answers: 0
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Quiz not found
+        '409':
+          description: Quiz already completed
+
+  /quizzes/{id}/submit:
+    post:
+      tags: ["Quizzes"]
+      security:
+        - bearerAuth: []
+      summary: Submit quiz answers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitQuizRequest'
+            example:
+              answers:
+                - questionId: "507f1f77bcf86cd799439013"
+                  selectedAnswer: 1
+                  timeSpent: 30000
+                - questionId: "507f1f77bcf86cd799439014"
+                  selectedAnswer: 0
+                  timeSpent: 45000
+              timeSpent: 75000
+      responses:
+        '200':
+          description: Quiz submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizResultResponse'
+              example:
+                message: "Quiz submitted successfully"
+                result:
+                  score: 40
+                  totalPoints: 50
+                  percentage: 80
+                  correctAnswers: 4
+                  totalQuestions: 5
+                  grade: "B"
+                  timeSpent: 75000
+                  isPassed: true
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Quiz attempt not found
+        '409':
+          description: Quiz already completed
+
+  /quizzes/{id}/results/{attemptId}:
+    get:
+      tags: ["Quizzes"]
+      security:
+        - bearerAuth: []
+      summary: Get detailed quiz results
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detailed quiz results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizResultsResponse'
+              example:
+                message: "Quiz results retrieved successfully"
+                quiz:
+                  title: "Carbon Footprint Basics"
+                  description: "Learn about carbon footprint"
+                  category: "Carbon Footprint"
+                  difficulty: "Easy"
+                results:
+                  score: 40
+                  totalPoints: 50
+                  percentage: 80
+                  correctAnswers: 4
+                  totalQuestions: 5
+                  grade: "B"
+                  timeSpent: 75000
+                  isPassed: true
+                  completedAt: "2023-10-01T10:15:00.000Z"
+                answers:
+                  - question: "What is carbon footprint?"
+                    selectedAnswer: 1
+                    correctAnswer: 1
+                    selectedAnswerText: "Amount of CO2 emissions"
+                    correctAnswerText: "Amount of CO2 emissions"
+                    isCorrect: true
+                    pointsEarned: 10
+                    pointsPossible: 10
+                    explanation: "Carbon footprint measures the total greenhouse gas emissions caused by an individual, organization, or product."
+                    timeSpent: 30000
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Quiz attempt not found
+
+  /quizzes/stats/user:
+    get:
+      tags: ["Quizzes"]
+      security:
+        - bearerAuth: []
+      summary: Get user's quiz statistics
+      responses:
+        '200':
+          description: User quiz statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserQuizStatsResponse'
+              example:
+                message: "User quiz statistics retrieved successfully"
+                statistics:
+                  totalAttempts: 5
+                  averageScore: 35
+                  averagePercentage: 70
+                  highestScore: 45
+                  totalTimeSpent: 250000
+                  passedCount: 3
+                recentAttempts:
+                  - quiz:
+                      title: "Carbon Footprint Basics"
+                      category: "Carbon Footprint"
+                      difficulty: "Easy"
+                      totalQuestions: 5
+                      totalPoints: 50
+                    score: 40
+                    percentage: 80
+                    grade: "B"
+                    completedAt: "2023-10-01T10:15:00.000Z"
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /quizzes/{id}/stats:
+    get:
+      tags: ["Quizzes"]
+      security:
+        - bearerAuth: []
+      summary: Get quiz statistics (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quiz statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizStatsResponse'
+              example:
+                message: "Quiz statistics retrieved successfully"
+                quiz:
+                  id: "507f1f77bcf86cd799439011"
+                  title: "Carbon Footprint Basics"
+                  category: "Carbon Footprint"
+                  difficulty: "Easy"
+                statistics:
+                  totalAttempts: 25
+                  averageScore: 38
+                  averagePercentage: 76
+                  highestScore: 50
+                  averageTimeSpent: 120000
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Quiz not found
+
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+        name:
+          type: string
+        email:
+          type: string
+        targetEmission:
+          type: number
+        totalEmission:
+          type: number
+        totalTrees:
+          type: integer
+
+    ActivityRequest:
+      type: object
+      required:
+        - category
+      properties:
+        category:
+          type: string
+          enum: [Transportation, Food, Energy, Shopping]
+        note:
+          type: string
+          description: Optional note from user
+        transportData:
+          type: object
+          properties:
+            distance:
+              type: number
+              minimum: 0.1
+              maximum: 10000
+              description: "Distance in km (0.1 - 10000)"
+            vehicleType: # This key must match 'key' from GET /factors
+              type: string
+        foodData:
+          type: object
+          properties:
+            weight: # Weight in kg
+              type: number
+              minimum: 0.01
+              maximum: 1000
+              description: "Weight in kg (0.01 - 1000)"
+            foodType: # This key must match 'key' from GET /factors
+              type: string
+        energyData:
+          type: object
+          properties:
+            energyConsumption: # Energy consumption in kWh
+              type: number
+              minimum: 0.01
+              maximum: 10000
+              description: "Energy consumption in kWh (0.01 - 10000)"
+            energyType: # This key must match 'key' from GET /factors
+              type: string
+              default: "grid_uk"
+        shoppingData:
+          type: object
+          properties:
+            quantity:
+              type: integer
+              minimum: 1
+              maximum: 1000
+              description: "Quantity of items (1 - 1000)"
+            itemType: # This key must match 'key' from GET /factors
+              type: string
+
+    Activity:
+      type: object
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+        category:
+          type: string
+        details: # This is server-generated description, e.g: "Medium petrol car (10 km)"
+          type: string
+        emission:
+          type: number
+        date:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time with timezone
+        note:
+          type: string
+        inputData: # Original input data for easy editing
+          type: object
+          properties:
+            transportData:
+              $ref: '#/components/schemas/ActivityRequest/properties/transportData'
+            foodData:
+              $ref: '#/components/schemas/ActivityRequest/properties/foodData'
+            energyData:
+              $ref: '#/components/schemas/ActivityRequest/properties/energyData'
+            shoppingData:
+              $ref: '#/components/schemas/ActivityRequest/properties/shoppingData'
+
+    ActivitiesResponse:
+      type: object
+      properties:
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: Total number of activities
+            page:
+              type: integer
+              description: Current page number
+            limit:
+              type: integer
+              description: Number of items per page
+            totalPages:
+              type: integer
+              description: Total number of pages
+            hasNext:
+              type: boolean
+              description: Whether there is a next page
+            hasPrev:
+              type: boolean
+              description: Whether there is a previous page
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        targetEmission:
+          type: number
+
+    LeaderboardResponse:
+      type: object
+      properties:
+        leaderboard:
+          type: array
+          items:
+            type: object
+            properties:
+              rank:
+                type: integer
+              userId:
+                type: string
+                description: User ID for identification
+              name:
+                type: string
+              totalEmission:
+                type: number
+              isCurrentUser:
+                type: boolean
+                description: Whether this entry is the current user
+
+    Quiz:
+      type: object
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        # correctAnswer removed for security - only used internally
+
+    QuizSubmitRequest:
+      type: object
+      required:
+        - quizId
+        - answer
+      properties:
+        quizId:
+          type: string
+          description: MongoDB ObjectId
+        answer:
+          type: integer
+
+    DashboardResponse:
+      type: object
+      properties:
+        summary:
+          type: object
+          properties:
+            totalEmission:
+              type: number
+            targetEmission:
+              type: number
+            dailyAverage:
+              type: number
+            totalTrees:
+              type: integer
+        chartData:
+          type: object
+          properties:
+            labels:
+              type: array
+              items:
+                type: string
+            data:
+              type: array
+              items:
+                type: number
+        categoryBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              percentage:
+                type: number
+              total:
+                type: number
+
+    ChallengesResponse:
+      type: object
+      properties:
+        challenges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Challenge'
+
+    Challenge:
+      type: object
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+        title:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [active, upcoming, completed]
+
+    FactorItem: # Schema for a single factor item
+      type: object
+      properties:
+        key:
+          type: string
+          description: Unique key to send in ActivityRequest
+        label:
+          type: string
+          description: Display label for frontend
+        unit:
+          type: string
+          description: "Input unit - e.g. km, kg, kWh, item"
+        factor:
+          type: number
+          description: kg CO2e per unit
+
+    FactorsResponse: # Updated schema
+      type: object
+      properties:
+        transport:
+          type: array
+          items:
+            $ref: '#/components/schemas/FactorItem'
+        food:
+          type: array
+          items:
+            $ref: '#/components/schemas/FactorItem'
+        energy:
+          type: array
+          items:
+            $ref: '#/components/schemas/FactorItem'
+        shopping: # Added for consistency
+          type: array
+          items:
+            $ref: '#/components/schemas/FactorItem'
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+          description: "Password must be at least 8 characters with uppercase, lowercase, number, and special character"
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Name of the field that failed validation
+              message:
+                type: string
+                description: Specific error message for that field
+
+    # Quiz-related schemas
+    QuizzesResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        quizzes:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizSummary'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        cooldownInfo:
+          type: object
+          properties:
+            recentlyCompleted:
+              type: integer
+            nextAvailableDate:
+              type: string
+              format: date-time
+            cooldownDays:
+              type: integer
+
+    ActiveQuizzesResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        quizzes:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizSummary'
+        cooldownInfo:
+          type: object
+          properties:
+            recentlyCompleted:
+              type: integer
+            nextAvailableDate:
+              type: string
+              format: date-time
+            cooldownDays:
+              type: integer
+
+    QuizSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+        totalQuestions:
+          type: integer
+        totalPoints:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    QuizDetailResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        quiz:
+          $ref: '#/components/schemas/QuizDetail'
+        hasAttempted:
+          type: boolean
+        previousAttempt:
+          type: object
+          properties:
+            score:
+              type: integer
+            percentage:
+              type: number
+            grade:
+              type: string
+            completedAt:
+              type: string
+              format: date-time
+
+    QuizDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+        totalQuestions:
+          type: integer
+        totalPoints:
+          type: integer
+        isActive:
+          type: boolean
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizQuestion'
+
+    QuizQuestion:
+      type: object
+      properties:
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        points:
+          type: integer
+        category:
+          type: string
+
+    CreateQuizRequest:
+      type: object
+      required:
+        - title
+        - description
+        - category
+        - difficulty
+        - questions
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+        questions:
+          type: array
+          items:
+            type: object
+            required:
+              - question
+              - options
+              - correctAnswer
+              - points
+            properties:
+              question:
+                type: string
+              options:
+                type: array
+                items:
+                  type: string
+              correctAnswer:
+                type: integer
+              points:
+                type: integer
+              explanation:
+                type: string
+              category:
+                type: string
+        isActive:
+          type: boolean
+          default: true
+
+    UpdateQuizRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateQuizRequest/properties/questions/items'
+        isActive:
+          type: boolean
+
+    QuizResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        quiz:
+          $ref: '#/components/schemas/QuizDetail'
+
+    QuizAttemptResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        attempt:
+          type: object
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+              enum: ["in_progress", "completed"]
+            startedAt:
+              type: string
+              format: date-time
+            answers:
+              type: integer
+
+    SubmitQuizRequest:
+      type: object
+      required:
+        - answers
+      properties:
+        answers:
+          type: array
+          items:
+            type: object
+            required:
+              - questionId
+              - selectedAnswer
+            properties:
+              questionId:
+                type: string
+              selectedAnswer:
+                type: integer
+              timeSpent:
+                type: integer
+        timeSpent:
+          type: integer
+
+    QuizResultResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        result:
+          type: object
+          properties:
+            score:
+              type: integer
+            totalPoints:
+              type: integer
+            percentage:
+              type: number
+            correctAnswers:
+              type: integer
+            totalQuestions:
+              type: integer
+            grade:
+              type: string
+            timeSpent:
+              type: integer
+            isPassed:
+              type: boolean
+
+    QuizResultsResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        quiz:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            category:
+              type: string
+            difficulty:
+              type: string
+        results:
+          type: object
+          properties:
+            score:
+              type: integer
+            totalPoints:
+              type: integer
+            percentage:
+              type: number
+            correctAnswers:
+              type: integer
+            totalQuestions:
+              type: integer
+            grade:
+              type: string
+            timeSpent:
+              type: integer
+            isPassed:
+              type: boolean
+            completedAt:
+              type: string
+              format: date-time
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+              selectedAnswer:
+                type: integer
+              correctAnswer:
+                type: integer
+              selectedAnswerText:
+                type: string
+              correctAnswerText:
+                type: string
+              isCorrect:
+                type: boolean
+              pointsEarned:
+                type: integer
+              pointsPossible:
+                type: integer
+              explanation:
+                type: string
+              timeSpent:
+                type: integer
+
+    UserQuizStatsResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        statistics:
+          type: object
+          properties:
+            totalAttempts:
+              type: integer
+            averageScore:
+              type: number
+            averagePercentage:
+              type: number
+            highestScore:
+              type: integer
+            totalTimeSpent:
+              type: integer
+            passedCount:
+              type: integer
+        recentAttempts:
+          type: array
+          items:
+            type: object
+            properties:
+              quiz:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  category:
+                    type: string
+                  difficulty:
+                    type: string
+                  totalQuestions:
+                    type: integer
+                  totalPoints:
+                    type: integer
+              score:
+                type: integer
+              percentage:
+                type: number
+              grade:
+                type: string
+              completedAt:
+                type: string
+                format: date-time
+
+    QuizStatsResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        quiz:
+          type: object
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            category:
+              type: string
+            difficulty:
+              type: string
+        statistics:
+          type: object
+          properties:
+            totalAttempts:
+              type: integer
+            averageScore:
+              type: number
+            averagePercentage:
+              type: number
+            highestScore:
+              type: integer
+            averageTimeSpent:
+              type: integer
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

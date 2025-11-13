@@ -1,0 +1,798 @@
+{
+  "info": {
+    "_postman_id": "activities-collection",
+    "name": "EcoTrack Activities API",
+    "description": "Complete API testing for EcoTrack Activities - Carbon Footprint Tracking",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "activities-test-suite"
+  },
+  "item": [
+    {
+      "name": "Get All Activities - Success (Empty List)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has correct structure\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('activities');",
+              "    pm.expect(jsonData).to.have.property('pagination');",
+              "    pm.expect(jsonData.activities).to.be.an('array');",
+              "    pm.expect(jsonData.pagination).to.have.property('total');",
+              "});",
+              "",
+              "pm.test(\"Empty activities list\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.activities.length).to.eql(0);",
+              "    pm.expect(jsonData.pagination.total).to.eql(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/activities",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Transportation Activity - Success",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Response has success message\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('message');",
+              "    pm.expect(jsonData.message).to.eql('Activity logged successfully');",
+              "});",
+              "",
+              "pm.test(\"Activity data is correct\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var activity = jsonData.activity;",
+              "    pm.expect(activity).to.have.property('id');",
+              "    pm.expect(activity.category).to.eql('Transportation');",
+              "    pm.expect(activity.emission).to.be.above(0);",
+              "    pm.expect(activity.details).to.include('car_medium_petrol');",
+              "});",
+              "",
+              "pm.test(\"Store activity ID for later tests\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('transport_activity_id', jsonData.activity.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"category\": \"Transportation\",\n    \"note\": \"Daily commute to office\",\n    \"transportData\": {\n        \"distance\": 15,\n        \"vehicleType\": \"car_medium_petrol\"\n    }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activities",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Food Activity - Success",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Food activity created successfully\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var activity = jsonData.activity;",
+              "    pm.expect(activity.category).to.eql('Food');",
+              "    pm.expect(activity.emission).to.be.above(50);",
+              "    pm.expect(activity.details).to.include('beef_kg');",
+              "});",
+              "",
+              "pm.test(\"Store food activity ID\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('food_activity_id', jsonData.activity.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"category\": \"Food\",\n    \"note\": \"Weekly beef consumption\",\n    \"foodData\": {\n        \"weight\": 1,\n        \"foodType\": \"beef_kg\"\n    }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activities",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Energy Activity - Success",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Energy activity created successfully\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var activity = jsonData.activity;",
+              "    pm.expect(activity.category).to.eql('Energy');",
+              "    pm.expect(activity.emission).to.be.above(0);",
+              "    pm.expect(activity.details).to.include('grid_uk');",
+              "});",
+              "",
+              "pm.test(\"Store energy activity ID\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('energy_activity_id', jsonData.activity.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"category\": \"Energy\",\n    \"note\": \"Monthly electricity usage\",\n    \"energyData\": {\n        \"energyConsumption\": 200,\n        \"energyType\": \"grid_uk\"\n    }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activities",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Shopping Activity - Success",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Shopping activity created successfully\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var activity = jsonData.activity;",
+              "    pm.expect(activity.category).to.eql('Shopping');",
+              "    pm.expect(activity.emission).to.be.above(0);",
+              "    pm.expect(activity.details).to.include('clothing_item');",
+              "});",
+              "",
+              "pm.test(\"Store shopping activity ID\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('shopping_activity_id', jsonData.activity.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"category\": \"Shopping\",\n    \"note\": \"New clothes purchase\",\n    \"shoppingData\": {\n        \"quantity\": 2,\n        \"itemType\": \"clothing_item\"\n    }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activities",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Activities - Success (With Data)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Returns 4 activities\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.activities.length).to.eql(4);",
+              "    pm.expect(jsonData.pagination.total).to.eql(4);",
+              "});",
+              "",
+              "pm.test(\"Activities have all required fields\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    jsonData.activities.forEach(function(activity) {",
+              "        pm.expect(activity).to.have.property('id');",
+              "        pm.expect(activity).to.have.property('category');",
+              "        pm.expect(activity).to.have.property('details');",
+              "        pm.expect(activity).to.have.property('emission');",
+              "        pm.expect(activity).to.have.property('date');",
+              "    });",
+              "});",
+              "",
+              "pm.test(\"All categories are present\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var categories = jsonData.activities.map(a => a.category);",
+              "    pm.expect(categories).to.include('Transportation');",
+              "    pm.expect(categories).to.include('Food');",
+              "    pm.expect(categories).to.include('Energy');",
+              "    pm.expect(categories).to.include('Shopping');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/activities",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Single Activity - Success",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Returns correct activity\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.id).to.eql(pm.environment.get('transport_activity_id'));",
+              "    pm.expect(jsonData.category).to.eql('Transportation');",
+              "    pm.expect(jsonData.note).to.eql('Daily commute to office');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/activities/{{transport_activity_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities",
+            "{{transport_activity_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Activity - Success",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Activity updated successfully\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.eql('Activity updated successfully');",
+              "    pm.expect(jsonData.activity.note).to.eql('Updated commute note');",
+              "});",
+              "",
+              "pm.test(\"Emission recalculated\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.activity.emission).to.be.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"note\": \"Updated commute note\",\n    \"transportData\": {\n        \"distance\": 20,\n        \"vehicleType\": \"car_medium_petrol\"\n    }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activities/{{transport_activity_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities",
+            "{{transport_activity_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Activity Statistics - Success",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Statistics structure is correct\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('period');",
+              "    pm.expect(jsonData).to.have.property('totalEmission');",
+              "    pm.expect(jsonData).to.have.property('totalActivities');",
+              "    pm.expect(jsonData).to.have.property('categoryBreakdown');",
+              "});",
+              "",
+              "pm.test(\"Has correct number of categories\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.categoryBreakdown.length).to.eql(4);",
+              "});",
+              "",
+              "pm.test(\"Total emission is calculated\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.totalEmission).to.be.above(0);",
+              "    pm.expect(jsonData.totalActivities).to.eql(4);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/activities/stats/summary",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities",
+            "stats",
+            "summary"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Activity - Success",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 204\", function () {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/activities/{{food_activity_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities",
+            "{{food_activity_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Activities - Success (After Delete)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Now has 3 activities\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.activities.length).to.eql(3);",
+              "    pm.expect(jsonData.pagination.total).to.eql(3);",
+              "});",
+              "",
+              "pm.test(\"Deleted activity is gone\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var activityIds = jsonData.activities.map(a => a.id);",
+              "    pm.expect(activityIds).to.not.include(pm.environment.get('food_activity_id'));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/activities",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Activity - Validation Error - Invalid Category",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Error message is correct\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.eql('Validation failed');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"category\": \"InvalidCategory\",\n    \"transportData\": {\n        \"distance\": 10,\n        \"vehicleType\": \"car_medium_petrol\"\n    }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activities",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Activity - Validation Error - Missing Required Fields",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Validation error returned\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.eql('Validation failed');",
+              "    pm.expect(jsonData.errors).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"category\": \"Transportation\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activities",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Activities - Unauthorized",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 401\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "",
+              "pm.test(\"Unauthorized message\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include('Not authorized');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/activities",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Single Activity - Not Found",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Not found message\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.eql('Activity not found');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/activities/507f1f77bcf86cd799439999",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activities",
+            "507f1f77bcf86cd799439999"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "transport_activity_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "food_activity_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "energy_activity_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "shopping_activity_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

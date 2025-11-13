@@ -1,0 +1,347 @@
+{
+	"info": {
+		"_postman_id": "d4e56f78-9a12-4b8c-b3dd-1f2a8e9c4d5e",
+		"name": "EcoTrack Dashboard API",
+		"description": "API testing collection for EcoTrack dashboard endpoint with complex aggregations",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "35651548"
+	},
+	"item": [
+		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Get Dashboard - Weekly (Default)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.eql('Dashboard data retrieved successfully');",
+									"});",
+									"",
+									"pm.test(\"Response has dashboard data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('dashboard');",
+									"    pm.expect(jsonData.dashboard).to.be.an('object');",
+									"});",
+									"",
+									"pm.test(\"Dashboard has summary data\", function () {",
+									"    var dashboard = pm.response.json().dashboard;",
+									"    pm.expect(dashboard).to.have.property('summary');",
+									"    pm.expect(dashboard.summary).to.have.property('totalEmission');",
+									"    pm.expect(dashboard.summary).to.have.property('targetEmission');",
+									"    pm.expect(dashboard.summary).to.have.property('dailyAverage');",
+									"    pm.expect(dashboard.summary).to.have.property('totalTrees');",
+									"});",
+									"",
+									"pm.test(\"Summary values are valid numbers\", function () {",
+									"    var summary = pm.response.json().dashboard.summary;",
+									"    pm.expect(summary.totalEmission).to.be.a('number');",
+									"    pm.expect(summary.targetEmission).to.be.a('number');",
+									"    pm.expect(summary.dailyAverage).to.be.a('number');",
+									"    pm.expect(summary.totalTrees).to.be.a('number');",
+									"    pm.expect(summary.totalEmission).to.be.at.least(0);",
+									"    pm.expect(summary.dailyAverage).to.be.at.least(0);",
+									"});",
+									"",
+									"pm.test(\"Dashboard has chart data\", function () {",
+									"    var dashboard = pm.response.json().dashboard;",
+									"    pm.expect(dashboard).to.have.property('chartData');",
+									"    pm.expect(dashboard.chartData).to.have.property('labels');",
+									"    pm.expect(dashboard.chartData).to.have.property('data');",
+									"    pm.expect(dashboard.chartData.labels).to.be.an('array');",
+									"    pm.expect(dashboard.chartData.data).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Weekly chart has 7 days of data\", function () {",
+									"    var chartData = pm.response.json().dashboard.chartData;",
+									"    pm.expect(chartData.labels).to.have.lengthOf(7);",
+									"    pm.expect(chartData.data).to.have.lengthOf(7);",
+									"    // Check that labels are valid date strings",
+									"    chartData.labels.forEach(function(label) {",
+									"        pm.expect(label).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Chart data values are valid numbers\", function () {",
+									"    var chartData = pm.response.json().dashboard.chartData;",
+									"    chartData.data.forEach(function(value) {",
+									"        pm.expect(value).to.be.a('number');",
+									"        pm.expect(value).to.be.at.least(0);",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Dashboard has category breakdown\", function () {",
+									"    var dashboard = pm.response.json().dashboard;",
+									"    pm.expect(dashboard).to.have.property('categoryBreakdown');",
+									"    pm.expect(dashboard.categoryBreakdown).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Category breakdown has valid structure\", function () {",
+									"    var categories = pm.response.json().dashboard.categoryBreakdown;",
+									"    categories.forEach(function(category) {",
+									"        pm.expect(category).to.have.property('category');",
+									"        pm.expect(category).to.have.property('total');",
+									"        pm.expect(category).to.have.property('count');",
+									"        pm.expect(category).to.have.property('percentage');",
+									"        pm.expect(category.total).to.be.a('number');",
+									"        pm.expect(category.count).to.be.a('number');",
+									"        pm.expect(category.percentage).to.be.a('number');",
+									"        pm.expect(category.total).to.be.at.least(0);",
+									"        pm.expect(category.count).to.be.at.least(0);",
+									"        pm.expect(category.percentage).to.be.at.least(0);",
+									"        pm.expect(category.percentage).to.be.at.most(100);",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/dashboard"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dashboard - Monthly",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Monthly chart data is valid\", function () {",
+									"    var chartData = pm.response.json().dashboard.chartData;",
+									"    // Monthly should have variable days (28-31)",
+									"    pm.expect(chartData.labels.length).to.be.within(28, 31);",
+									"    pm.expect(chartData.data.length).to.equal(chartData.labels.length);",
+									"});",
+									"",
+									"pm.test(\"Monthly period summary is correct\", function () {",
+									"    var summary = pm.response.json().dashboard.summary;",
+									"    pm.expect(summary.totalEmission).to.be.a('number');",
+									"    pm.expect(summary.dailyAverage).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/dashboard?period=monthly",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"dashboard"
+							],
+							"query": [
+								{
+									"key": "period",
+									"value": "monthly"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dashboard - Yearly",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Yearly chart has 12 months\", function () {",
+									"    var chartData = pm.response.json().dashboard.chartData;",
+									"    pm.expect(chartData.labels).to.have.lengthOf(12);",
+									"    pm.expect(chartData.data).to.have.lengthOf(12);",
+									"});",
+									"",
+									"pm.test(\"Yearly labels are month names\", function () {",
+									"    var labels = pm.response.json().dashboard.chartData.labels;",
+									"    var expectedMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',",
+									"                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];",
+									"    pm.expect(labels).to.eql(expectedMonths);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/dashboard?period=yearly",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"dashboard"
+							],
+							"query": [
+								{
+									"key": "period",
+									"value": "yearly"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dashboard - Custom Date Range",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Custom date range returns valid data\", function () {",
+									"    var dashboard = pm.response.json().dashboard;",
+									"    pm.expect(dashboard).to.have.property('summary');",
+									"    pm.expect(dashboard).to.have.property('chartData');",
+									"    pm.expect(dashboard).to.have.property('categoryBreakdown');",
+									"});",
+									"",
+									"pm.test(\"Custom range chart data is reasonable\", function () {",
+									"    var chartData = pm.response.json().dashboard.chartData;",
+									"    pm.expect(chartData.labels.length).to.be.greaterThan(0);",
+									"    pm.expect(chartData.data.length).to.equal(chartData.labels.length);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/dashboard?startDate=2023-01-01&endDate=2023-12-31",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"dashboard"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2023-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2023-12-31"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dashboard - Unauthorized",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Response has unauthorized error\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.eql('Not authorized to access this route');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/dashboard"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request script",
+					"// Add any global setup here if needed"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test script",
+					"// Add any global test assertions here if needed"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000/api",
+			"type": "string"
+		}
+	]
+}

@@ -1,0 +1,796 @@
+{
+	"info": {
+		"_postman_id": "d6f78g9h-1i2j-3k4l-5m6n-7o8p9q0r1s2t",
+		"name": "EcoTrack Quiz API",
+		"description": "API testing collection for EcoTrack quiz system - educational gamification",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "35651548"
+	},
+	"item": [
+		{
+			"name": "Quiz Management",
+			"item": [
+				{
+					"name": "Get All Quizzes",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.eql('Quizzes retrieved successfully');",
+									"});",
+									"",
+									"pm.test(\"Response has quizzes array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('quizzes');",
+									"    pm.expect(jsonData.quizzes).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Response has pagination\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('pagination');",
+									"    pm.expect(jsonData.pagination).to.have.property('total');",
+									"    pm.expect(jsonData.pagination).to.have.property('page');",
+									"    pm.expect(jsonData.pagination).to.have.property('totalPages');",
+									"});",
+									"",
+									"pm.test(\"Quiz structure is valid\", function () {",
+									"    var quizzes = pm.response.json().quizzes;",
+									"    if (quizzes.length > 0) {",
+									"        var quiz = quizzes[0];",
+									"        pm.expect(quiz).to.have.property('title');",
+									"        pm.expect(quiz).to.have.property('description');",
+									"        pm.expect(quiz).to.have.property('category');",
+									"        pm.expect(quiz).to.have.property('difficulty');",
+									"        pm.expect(quiz).to.have.property('totalQuestions');",
+									"        pm.expect(quiz).to.have.property('totalPoints');",
+									"        pm.expect(quiz).to.have.property('estimatedTime');",
+									"        pm.expect(quiz).to.have.property('isActive');",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Cooldown info is present when applicable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    // cooldownInfo might not be present if no recent attempts",
+									"    if (jsonData.cooldownInfo) {",
+									"        pm.expect(jsonData.cooldownInfo).to.have.property('recentlyCompleted');",
+									"        pm.expect(jsonData.cooldownInfo).to.have.property('nextAvailableDate');",
+									"        pm.expect(jsonData.cooldownInfo).to.have.property('cooldownDays');",
+									"        pm.expect(jsonData.cooldownInfo.cooldownDays).to.eql(30);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/quizzes"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Active Quizzes",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has quizzes array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('quizzes');",
+									"    pm.expect(jsonData.quizzes).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"All quizzes are active\", function () {",
+									"    var quizzes = pm.response.json().quizzes;",
+									"    quizzes.forEach(function(quiz) {",
+									"        pm.expect(quiz.isActive).to.eql(true);",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Cooldown info is present when applicable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    // cooldownInfo might not be present if no recent attempts",
+									"    if (jsonData.cooldownInfo) {",
+									"        pm.expect(jsonData.cooldownInfo).to.have.property('recentlyCompleted');",
+									"        pm.expect(jsonData.cooldownInfo).to.have.property('nextAvailableDate');",
+									"        pm.expect(jsonData.cooldownInfo).to.have.property('cooldownDays');",
+									"        pm.expect(jsonData.cooldownInfo.cooldownDays).to.eql(30);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/quizzes/active"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Quiz",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has success message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.eql('Quiz created successfully');",
+									"});",
+									"",
+									"pm.test(\"Response has quiz data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('quiz');",
+									"    var quiz = jsonData.quiz;",
+									"    pm.expect(quiz).to.have.property('_id');",
+									"    pm.expect(quiz.title).to.eql('Carbon Footprint Basics Quiz');",
+									"    pm.expect(quiz.category).to.eql('Carbon Footprint');",
+									"    pm.expect(quiz.difficulty).to.eql('Easy');",
+									"    pm.expect(quiz.questions).to.be.an('array');",
+									"    pm.expect(quiz.questions.length).to.be.greaterThan(0);",
+									"});",
+									"",
+									"// Store quiz ID for later tests",
+									"var quiz = pm.response.json().quiz;",
+									"pm.collectionVariables.set('quiz_id', quiz._id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Carbon Footprint Basics Quiz\",\n  \"description\": \"Test your knowledge about carbon footprints and environmental impact\",\n  \"category\": \"Carbon Footprint\",\n  \"difficulty\": \"Easy\",\n  \"estimatedTime\": 15,\n  \"questions\": [\n    {\n      \"question\": \"What is a carbon footprint?\",\n      \"options\": [\n        \"The amount of carbon dioxide released by burning fossil fuels\",\n        \"The total amount of greenhouse gases emitted by human activities\",\n        \"The size of a person's shoe print in carbon\",\n        \"The carbon content in the soil\"\n      ],\n      \"correctAnswer\": 1,\n      \"explanation\": \"A carbon footprint is the total amount of greenhouse gases, especially carbon dioxide, emitted by human activities.\",\n      \"points\": 10,\n      \"category\": \"Carbon Footprint\"\n    },\n    {\n      \"question\": \"Which of the following activities typically has the highest carbon footprint?\",\n      \"options\": [\n        \"Eating a vegetarian meal\",\n        \"Taking public transportation\",\n        \"Flying in an airplane\",\n        \"Using energy-efficient light bulbs\"\n      ],\n      \"correctAnswer\": 2,\n      \"explanation\": \"Air travel has one of the highest carbon footprints per passenger due to jet fuel emissions.\",\n      \"points\": 10,\n      \"category\": \"Transportation\"\n    },\n    {\n      \"question\": \"What is the main greenhouse gas contributing to climate change?\",\n      \"options\": [\n        \"Oxygen\",\n        \"Carbon Dioxide\",\n        \"Nitrogen\",\n        \"Hydrogen\"\n      ],\n      \"correctAnswer\": 1,\n      \"explanation\": \"Carbon dioxide (CO2) is the primary greenhouse gas responsible for climate change.\",\n      \"points\": 10,\n      \"category\": \"General\"\n    }\n  ],\n  \"tags\": [\"carbon\", \"footprint\", \"basics\", \"education\"],\n  \"isActive\": true\n}"
+						},
+						"url": "{{base_url}}/quizzes"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Quiz",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has quiz data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('quiz');",
+									"    var quiz = jsonData.quiz;",
+									"    pm.expect(quiz.title).to.eql('Carbon Footprint Basics Quiz');",
+									"    pm.expect(quiz.category).to.eql('Carbon Footprint');",
+									"    pm.expect(quiz).to.have.property('questions');",
+									"    pm.expect(quiz.questions).to.be.an('array');",
+									"    pm.expect(quiz.questions.length).to.be.greaterThan(0);",
+									"});",
+									"",
+									"pm.test(\"Questions don't include correct answers\", function () {",
+									"    var questions = pm.response.json().quiz.questions;",
+									"    questions.forEach(function(question) {",
+									"        pm.expect(question).to.have.property('question');",
+									"        pm.expect(question).to.have.property('options');",
+									"        pm.expect(question).to.have.property('points');",
+									"        pm.expect(question).to.not.have.property('correctAnswer');",
+									"        pm.expect(question).to.not.have.property('explanation');",
+									"    });",
+									"});",
+									"",
+									"// Store question IDs for submit test",
+									"var questions = pm.response.json().quiz.questions;",
+									"if (questions.length >= 3) {",
+									"    pm.collectionVariables.set('question_1_id', questions[0]._id);",
+									"    pm.collectionVariables.set('question_2_id', questions[1]._id);",
+									"    pm.collectionVariables.set('question_3_id', questions[2]._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/quizzes/{{quiz_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"quizzes",
+								"{{quiz_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Quizzes - With Filters",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has filtered quizzes\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('quizzes');",
+									"    pm.expect(jsonData.quizzes).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/quizzes?category=Carbon%20Footprint&difficulty=Easy&limit=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"quizzes"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "Carbon%20Footprint"
+								},
+								{
+									"key": "difficulty",
+									"value": "Easy"
+								},
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Quiz - Not Found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Response has not found error\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql('Quiz not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/quizzes/507f1f77bcf86cd799439999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"quizzes",
+								"507f1f77bcf86cd799439999"
+							]
+						}
+					},
+					"response": []
+				},
+
+				{
+					"name": "Get Quizzes - Unauthorized",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Response has unauthorized error\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql('Not authorized to access this route');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/quizzes"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Quiz Taking",
+			"item": [
+				{
+					"name": "Start Quiz Attempt",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has attempt data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('attempt');",
+									"    var attempt = jsonData.attempt;",
+									"    pm.expect(attempt).to.have.property('id');",
+									"    pm.expect(attempt).to.have.property('status');",
+									"    pm.expect(attempt).to.have.property('startedAt');",
+									"    pm.expect(attempt.status).to.eql('in_progress');",
+									"});",
+									"",
+									"// Store attempt ID for later tests",
+									"var attempt = pm.response.json().attempt;",
+									"pm.collectionVariables.set('attempt_id', attempt.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/quizzes/{{quiz_id}}/attempt",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"quizzes",
+								"{{quiz_id}}",
+								"attempt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Quiz Answers",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Ensure question ID variables are set for testing",
+									"// If not set from previous test, use fallback values",
+									"if (!pm.collectionVariables.get('question_1_id')) {",
+									"    // Make a quick call to get the quiz and extract question IDs",
+									"    const quizResponse = pm.sendRequest({",
+									"        url: pm.collectionVariables.get('base_url') + '/quizzes/' + pm.collectionVariables.get('quiz_id'),",
+									"        method: 'GET',",
+									"        header: {",
+									"            'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
+									"        }",
+									"    });",
+									"    ",
+									"    quizResponse.done(function(response) {",
+									"        if (response.code === 200) {",
+									"            const questions = response.json().quiz.questions;",
+									"            if (questions && questions.length >= 3) {",
+									"                pm.collectionVariables.set('question_1_id', questions[0]._id);",
+									"                pm.collectionVariables.set('question_2_id', questions[1]._id);",
+									"                pm.collectionVariables.set('question_3_id', questions[2]._id);",
+									"            }",
+									"        }",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has result data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('result');",
+									"    var result = jsonData.result;",
+									"    pm.expect(result).to.have.property('score');",
+									"    pm.expect(result).to.have.property('totalPoints');",
+									"    pm.expect(result).to.have.property('percentage');",
+									"    pm.expect(result).to.have.property('correctAnswers');",
+									"    pm.expect(result).to.have.property('totalQuestions');",
+									"    pm.expect(result).to.have.property('grade');",
+									"    pm.expect(result).to.have.property('isPassed');",
+									"});",
+									"",
+									"pm.test(\"Score calculation is correct\", function () {",
+									"    var result = pm.response.json().result;",
+									"    pm.expect(result.score).to.be.a('number');",
+									"    pm.expect(result.percentage).to.be.a('number');",
+									"    pm.expect(result.percentage).to.be.at.least(0);",
+									"    pm.expect(result.percentage).to.be.at.most(100);",
+									"});",
+									"",
+									"pm.test(\"Question IDs were properly set\", function () {",
+									"    pm.expect(pm.collectionVariables.get('question_1_id')).to.not.be.empty;",
+									"    pm.expect(pm.collectionVariables.get('question_2_id')).to.not.be.empty;",
+									"    pm.expect(pm.collectionVariables.get('question_3_id')).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"answers\": [\n    {\n      \"questionId\": \"{{question_1_id}}\",\n      \"selectedAnswer\": 1,\n      \"timeSpent\": 30\n    },\n    {\n      \"questionId\": \"{{question_2_id}}\",\n      \"selectedAnswer\": 2,\n      \"timeSpent\": 45\n    },\n    {\n      \"questionId\": \"{{question_3_id}}\",\n      \"selectedAnswer\": 1,\n      \"timeSpent\": 25\n    }\n  ],\n  \"timeSpent\": 100\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/quizzes/{{quiz_id}}/submit",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"quizzes",
+								"{{quiz_id}}",
+								"submit"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Quiz Results",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has detailed results\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('quiz');",
+									"    pm.expect(jsonData).to.have.property('results');",
+									"    pm.expect(jsonData).to.have.property('answers');",
+									"    pm.expect(jsonData.answers).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Results include explanations\", function () {",
+									"    var answers = pm.response.json().answers;",
+									"    answers.forEach(function(answer) {",
+									"        pm.expect(answer).to.have.property('question');",
+									"        pm.expect(answer).to.have.property('selectedAnswer');",
+									"        pm.expect(answer).to.have.property('correctAnswer');",
+									"        pm.expect(answer).to.have.property('isCorrect');",
+									"        pm.expect(answer).to.have.property('pointsEarned');",
+									"        pm.expect(answer).to.have.property('explanation');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/quizzes/{{quiz_id}}/results/{{attempt_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"quizzes",
+								"{{quiz_id}}",
+								"results",
+								"{{attempt_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start Quiz Attempt - Already Completed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 409\", function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"",
+									"pm.test(\"Response has conflict message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql('Quiz already completed. Cannot retake.');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/quizzes/{{quiz_id}}/attempt",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"quizzes",
+								"{{quiz_id}}",
+								"attempt"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Quiz Statistics",
+			"item": [
+				{
+					"name": "Get User Quiz Statistics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has user statistics\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('statistics');",
+									"    pm.expect(jsonData).to.have.property('recentAttempts');",
+									"    var stats = jsonData.statistics;",
+									"    pm.expect(stats).to.have.property('totalAttempts');",
+									"    pm.expect(stats).to.have.property('averageScore');",
+									"    pm.expect(stats).to.have.property('averagePercentage');",
+									"    pm.expect(stats).to.have.property('highestScore');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/quizzes/stats/user"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Quiz Statistics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has quiz statistics\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('quiz');",
+									"    pm.expect(jsonData).to.have.property('statistics');",
+									"    var stats = jsonData.statistics;",
+									"    pm.expect(stats).to.have.property('totalAttempts');",
+									"    pm.expect(stats).to.have.property('averageScore');",
+									"    pm.expect(stats).to.have.property('averagePercentage');",
+									"    pm.expect(stats).to.have.property('highestScore');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/quizzes/{{quiz_id}}/stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"quizzes",
+								"{{quiz_id}}",
+								"stats"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request script",
+					"// Add any global setup here if needed"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test script",
+					"// Add any global test assertions here if needed"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000/api",
+			"type": "string"
+		},
+		{
+			"key": "quiz_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "attempt_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "question_1_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "question_2_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "question_3_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

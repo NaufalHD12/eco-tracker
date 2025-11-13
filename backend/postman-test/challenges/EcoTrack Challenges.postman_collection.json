@@ -1,0 +1,605 @@
+{
+	"info": {
+		"_postman_id": "c5e67f89-8b23-5c9d-c4ee-2g3b9f0d6f7g",
+		"name": "EcoTrack Challenges API",
+		"description": "API testing collection for EcoTrack challenges - gamification features",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "35651548"
+	},
+	"item": [
+		{
+			"name": "Challenges",
+			"item": [
+				{
+					"name": "Get All Challenges",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.eql('Challenges retrieved successfully');",
+									"});",
+									"",
+									"pm.test(\"Response has challenges array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('challenges');",
+									"    pm.expect(jsonData.challenges).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Response has pagination\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('pagination');",
+									"    pm.expect(jsonData.pagination).to.have.property('total');",
+									"    pm.expect(jsonData.pagination).to.have.property('page');",
+									"    pm.expect(jsonData.pagination).to.have.property('totalPages');",
+									"});",
+									"",
+									"pm.test(\"Challenge structure is valid\", function () {",
+									"    var challenges = pm.response.json().challenges;",
+									"    if (challenges.length > 0) {",
+									"        var challenge = challenges[0];",
+									"        pm.expect(challenge).to.have.property('title');",
+									"        pm.expect(challenge).to.have.property('description');",
+									"        pm.expect(challenge).to.have.property('category');",
+									"        pm.expect(challenge).to.have.property('status');",
+									"        pm.expect(challenge).to.have.property('startDate');",
+									"        pm.expect(challenge).to.have.property('endDate');",
+									"        pm.expect(challenge).to.have.property('targetEmission');",
+									"        pm.expect(challenge).to.have.property('totalParticipants');",
+									"        pm.expect(challenge).to.have.property('totalEmissionSaved');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/challenges"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Active Challenges",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has challenges array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('challenges');",
+									"    pm.expect(jsonData.challenges).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"All challenges are active\", function () {",
+									"    var challenges = pm.response.json().challenges;",
+									"    challenges.forEach(function(challenge) {",
+									"        pm.expect(challenge.status).to.eql('active');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/challenges/active"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Challenge",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has success message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.eql('Challenge created successfully');",
+									"});",
+									"",
+									"pm.test(\"Response has challenge data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('challenge');",
+									"    var challenge = jsonData.challenge;",
+									"    pm.expect(challenge).to.have.property('_id');",
+									"    pm.expect(challenge.title).to.eql('Meat-Free Month Challenge');",
+									"    pm.expect(challenge.category).to.eql('Food');",
+									"    pm.expect(challenge.status).to.eql('upcoming');",
+									"});",
+									"",
+									"// Store challenge ID for later tests",
+									"var challenge = pm.response.json().challenge;",
+									"pm.collectionVariables.set('challenge_id', challenge._id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Meat-Free Month Challenge\",\n  \"description\": \"Go meat-free for a month to reduce your carbon footprint\",\n  \"category\": \"Food\",\n  \"startDate\": \"2025-12-01T00:00:00.000Z\",\n  \"endDate\": \"2025-12-31T23:59:59.000Z\",\n  \"targetEmission\": 50,\n  \"difficulty\": \"Medium\",\n  \"rules\": [\n    \"No beef, pork, or lamb\",\n    \"Focus on plant-based alternatives\",\n    \"Track your meals daily\"\n  ],\n  \"rewards\": {\n    \"points\": 100,\n    \"badge\": \"Meat-Free Champion\",\n    \"description\": \"Completed meat-free month challenge\"\n  }\n}"
+						},
+						"url": "{{base_url}}/challenges"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Challenge - Duplicate Active/Upcoming Title",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 409\", function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"",
+									"pm.test(\"Response has smart validation message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('challenge with this title already exists');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Meat-Free Month Challenge\",\n  \"description\": \"Go meat-free for a month to reduce your carbon footprint\",\n  \"category\": \"Food\",\n  \"startDate\": \"2025-12-01T00:00:00.000Z\",\n  \"endDate\": \"2025-12-31T23:59:59.000Z\",\n  \"targetEmission\": 50,\n  \"difficulty\": \"Medium\",\n  \"rules\": [\n    \"No beef, pork, or lamb\",\n    \"Focus on plant-based alternatives\",\n    \"Track your meals daily\"\n  ],\n  \"rewards\": {\n    \"points\": 100,\n    \"badge\": \"Meat-Free Champion\",\n    \"description\": \"Completed meat-free month challenge\"\n  }\n}"
+						},
+						"url": "{{base_url}}/challenges"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Challenge",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has challenge data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('challenge');",
+									"    var challenge = jsonData.challenge;",
+									"    pm.expect(challenge.title).to.eql('Meat-Free Month Challenge');",
+									"    pm.expect(challenge.category).to.eql('Food');",
+									"    pm.expect(challenge).to.have.property('participation');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/challenges/{{challenge_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"challenges",
+								"{{challenge_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Join Challenge",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql('Successfully joined challenge');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/challenges/{{challenge_id}}/join",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"challenges",
+								"{{challenge_id}}",
+								"join"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Join Challenge - Already Joined",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 409\", function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"",
+									"pm.test(\"Response has conflict message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql('Already joined this challenge');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/challenges/{{challenge_id}}/join",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"challenges",
+								"{{challenge_id}}",
+								"join"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Challenge Leaderboard",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has leaderboard data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('leaderboard');",
+									"    pm.expect(jsonData).to.have.property('challenge');",
+									"    pm.expect(jsonData).to.have.property('userRank');",
+									"    pm.expect(jsonData.leaderboard).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Leaderboard entries have correct structure\", function () {",
+									"    var leaderboard = pm.response.json().leaderboard;",
+									"    if (leaderboard.length > 0) {",
+									"        var entry = leaderboard[0];",
+									"        pm.expect(entry).to.have.property('user');",
+									"        pm.expect(entry).to.have.property('emissionSaved');",
+									"        pm.expect(entry).to.have.property('points');",
+									"        pm.expect(entry).to.have.property('streakDays');",
+									"        pm.expect(entry).to.have.property('progress');",
+									"        pm.expect(entry.emissionSaved).to.be.a('number');",
+									"        pm.expect(entry.points).to.be.a('number');",
+									"        pm.expect(entry.progress).to.be.at.least(0);",
+									"        pm.expect(entry.progress).to.be.at.most(100);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/challenges/{{challenge_id}}/leaderboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"challenges",
+								"{{challenge_id}}",
+								"leaderboard"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Challenge Progress",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has progress update message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql('Challenge progress updated successfully');",
+									"    pm.expect(jsonData).to.have.property('totalParticipants');",
+									"    pm.expect(jsonData).to.have.property('totalEmissionSaved');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/challenges/{{challenge_id}}/update-progress",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"challenges",
+								"{{challenge_id}}",
+								"update-progress"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Challenges - With Filters",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has filtered challenges\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('challenges');",
+									"    pm.expect(jsonData.challenges).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/challenges?category=Food&status=upcoming&limit=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"challenges"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "Food"
+								},
+								{
+									"key": "status",
+									"value": "upcoming"
+								},
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Challenges - Unauthorized",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Response has unauthorized error\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql('Not authorized to access this route');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/challenges"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Challenge - Not Found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Response has not found error\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql('Challenge not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/challenges/507f1f77bcf86cd799439999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"challenges",
+								"507f1f77bcf86cd799439999"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request script",
+					"// Add any global setup here if needed"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test script",
+					"// Add any global test assertions here if needed"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000/api",
+			"type": "string"
+		},
+		{
+			"key": "challenge_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
