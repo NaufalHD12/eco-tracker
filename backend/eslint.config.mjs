@@ -15,6 +15,8 @@ export default [
       'require-jsdoc': 'off',
       'no-console': 'off',
       'max-len': 'off',
+      'new-cap': 'off',
+      'no-invalid-this': 'off',
     },
   },
   {
