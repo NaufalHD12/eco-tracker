@@ -615,6 +615,106 @@ paths:
         '403':
           description: Forbidden
 
+  /onboarding/status:
+    get:
+      tags: ["Onboarding"]
+      security:
+        - bearerAuth: []
+      summary: Get current user's onboarding status
+      responses:
+        '200':
+          description: Onboarding status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingStatusResponse'
+              example:
+                message: "Onboarding status retrieved successfully"
+                onboarding:
+                  completed: false
+                  completedSteps:
+                    - stepId: "welcome"
+                      completedAt: "2023-10-01T10:00:00.000Z"
+                  remainingSteps: ["set_target", "first_activity", "explore_dashboard"]
+                  totalSteps: 4
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+
+  /onboarding/step/{stepId}:
+    post:
+      tags: ["Onboarding"]
+      security:
+        - bearerAuth: []
+      summary: Complete a specific onboarding step
+      parameters:
+        - name: stepId
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [welcome, set_target, first_activity, explore_dashboard]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteStepRequest'
+            example:
+              data:
+                targetEmission: 80
+      responses:
+        '200':
+          description: Step completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteStepResponse'
+              example:
+                message: "Step completed successfully"
+                stepId: "set_target"
+                onboardingCompleted: false
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+        '409':
+          description: Step already completed
+
+  /onboarding/skip:
+    post:
+      tags: ["Onboarding"]
+      security:
+        - bearerAuth: []
+      summary: Skip onboarding entirely
+      responses:
+        '200':
+          description: Onboarding skipped successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkipOnboardingResponse'
+              example:
+                message: "Onboarding skipped successfully"
+                onboardingCompleted: true
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+
 
 
   /quizzes:
@@ -1430,6 +1530,63 @@ components:
               message:
                 type: string
                 description: Specific error message for that field
+
+    # Onboarding-related schemas
+    OnboardingStatusResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        onboarding:
+          type: object
+          properties:
+            completed:
+              type: boolean
+            completedSteps:
+              type: array
+              items:
+                type: object
+                properties:
+                  stepId:
+                    type: string
+                  completedAt:
+                    type: string
+                    format: date-time
+            remainingSteps:
+              type: array
+              items:
+                type: string
+            totalSteps:
+              type: integer
+
+    CompleteStepRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            targetEmission:
+              type: number
+              minimum: 0
+              maximum: 10000
+
+    CompleteStepResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        stepId:
+          type: string
+        onboardingCompleted:
+          type: boolean
+
+    SkipOnboardingResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        onboardingCompleted:
+          type: boolean
 
     # Quiz-related schemas
     QuizzesResponse:

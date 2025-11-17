@@ -37,6 +37,20 @@ const userSchema = new mongoose.Schema({
     default: 0,
     min: [0, 'Total trees cannot be negative'],
   },
+  onboardingCompleted: {
+    type: Boolean,
+    default: false,
+  },
+  onboardingSteps: [{
+    stepId: {
+      type: String,
+      required: true,
+    },
+    completedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  }],
 }, {
   timestamps: true,
 });

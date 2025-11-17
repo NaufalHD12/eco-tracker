@@ -5,6 +5,7 @@ import factorsRoutes from './factorsRoutes.js';
 import dashboardRoutes from './dashboardRoutes.js';
 import challengeRoutes from './challengeRoutes.js';
 import quizRoutes from './quizRoutes.js';
+import onboardingRoutes from './onboardingRoutes.js';
 
 const router = express.Router();
 
@@ -14,6 +15,7 @@ router.use('/factors', factorsRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/challenges', challengeRoutes);
 router.use('/quizzes', quizRoutes);
+router.use('/onboarding', onboardingRoutes);
 
 router.get('/health', (req, res) => {
   res.json({
