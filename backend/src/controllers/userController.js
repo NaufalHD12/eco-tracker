@@ -1,12 +1,78 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-const generateToken = (userId) => {
+const generateAccessToken = (userId) => {
   return jwt.sign({userId}, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d',
+    expiresIn: process.env.JWT_ACCESS_EXPIRE || '15m', // Short-lived access token
   });
 };
 
+const generateRefreshToken = (userId) => {
+  return jwt.sign({userId}, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d', // Long-lived refresh token
+  });
+};
+
+/**
+ * Refresh access token using refresh token
+ * @route POST /api/auth/refresh
+ * @access Public (but requires valid refresh token)
+ */
+export const refreshToken = async (req, res) => {
+  try {
+    let refreshTokenFromHeader;
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      refreshTokenFromHeader = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!refreshTokenFromHeader) {
+      return res.status(401).json({
+        message: 'Refresh token required',
+        errors: [],
+      });
+    }
+
+    try {
+      // Verify refresh token
+      const decoded = jwt.verify(refreshTokenFromHeader, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
+
+      // Check if user still exists
+      const user = await User.findById(decoded.userId);
+      if (!user) {
+        return res.status(401).json({
+          message: 'User not found',
+          errors: [],
+        });
+      }
+
+      // Generate new access token
+      const accessToken = generateAccessToken(user._id);
+
+      res.json({
+        message: 'Token refreshed successfully',
+        accessToken,
+      });
+
+    } catch (tokenError) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Refresh token verification error:', tokenError);
+      }
+      return res.status(401).json({
+        message: 'Invalid refresh token',
+        errors: [],
+      });
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Refresh token error:', error);
+    }
+    res.status(500).json({
+      message: 'Server error during token refresh',
+      errors: [],
+    });
+  }
+};
 /**
  * Register a new user
  * @route POST /api/auth/register
@@ -25,7 +91,8 @@ export const register = async (req, res) => {
     }
 
     const user = await User.create({name, email, password});
-    const token = generateToken(user._id);
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
     const userResponse = {
       id: user._id,
@@ -38,7 +105,8 @@ export const register = async (req, res) => {
 
     res.status(201).json({
       message: 'User registered successfully',
-      token,
+      accessToken,
+      refreshToken,
       user: userResponse,
     });
   } catch (error) {
@@ -86,7 +154,8 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = generateToken(user._id);
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
     const userResponse = {
       id: user._id,
       name: user.name,
@@ -98,7 +167,8 @@ export const login = async (req, res) => {
 
     res.json({
       message: 'Login successful',
-      token,
+      accessToken,
+      refreshToken,
       user: userResponse,
     });
   } catch (error) {

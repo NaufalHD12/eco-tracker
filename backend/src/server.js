@@ -15,7 +15,10 @@ const PORT = process.env.PORT || 5000;
 app.use(ipRateLimiter);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000'], // Allow frontend dev ports
+  credentials: true, // Allow cookies/sessions if needed
+}));
 app.use(express.json());
 
 // Routes with user-based rate limiting and caching (applied within routes after auth)

@@ -56,7 +56,7 @@ export const getOnboardingStatus = async (req, res) => {
 export const completeOnboardingStep = async (req, res) => {
   try {
     const {stepId} = req.params;
-    const {data} = req.body; // Optional additional data for the step
+    const data = req.body?.data || {};
 
     const validSteps = ['welcome', 'set_target', 'first_activity', 'explore_dashboard'];
 
@@ -86,7 +86,10 @@ export const completeOnboardingStep = async (req, res) => {
     }
 
     // Add step to completed steps
-    user.onboardingSteps.push({stepId});
+    user.onboardingSteps.push({
+      stepId,
+      completedAt: new Date(),
+    });
 
     // Special handling for specific steps
     if (stepId === 'set_target' && data && data.targetEmission) {
