@@ -143,37 +143,6 @@ A comprehensive personal carbon footprint tracker **built with MERN Stack** that
    npm run start
    ```
 
-## 📋 API Documentation
-
-Complete API documentation is available via OpenAPI 3.0 specification:
-- **Swagger UI**: http://localhost:5000/api-docs (when running backend)
-- **OpenAPI JSON**: http://localhost:5000/api-spec.yaml
-
-### Main API Endpoints:
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/auth/login` | POST | User authentication |
-| `/auth/register` | POST | User registration |
-| `/activities` | GET/POST | Activity management |
-| `/dashboard` | GET | Dashboard data and statistics |
-| `/challenges` | GET/POST | Challenge system |
-| `/quizzes` | GET/POST | Quiz management and attempts |
-| `/profile` | GET/PUT | User profile operations |
-| `/factors` | GET | Emission factors data |
-| `/onboarding` | GET/POST | User onboarding flow |
-
-## 🧪 Testing
-
-### API Testing
-Include Postman collection in `backend/postman-test/` directory:
-- EcoTrack Authentication.postman_collection.json
-- EcoTrack Activities.postman_collection.json
-- EcoTrack Challenges.postman_collection.json
-- EcoTrack Dashboard.postman_collection.json
-- EcoTrack Factors.postman_collection.json
-- EcoTrack Onboarding.postman_collection.json
-- EcoTrack Quiz.postman_collection.json
 
 ### Frontend Testing
 ```bash
@@ -181,69 +150,5 @@ cd frontend
 npm run lint     # Lint code
 npm run preview  # Preview production build
 ```
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-- Follow ESLint configuration in both backend and frontend
-- Use meaningful commit messages
-- Write clear documentation for complex features
-- Add tests for new functionality
-
-## 📄 Project Structure
-
-```
-eco-tracker/
-├── backend/                     # Express.js API server
-│   ├── src/
-│   │   ├── controllers/         # Route handlers
-│   │   ├── models/              # MongoDB schemas
-│   │   ├── routes/              # API route definitions
-│   │   ├── middleware/          # Express middleware
-│   │   ├── utils/               # Utility functions
-│   │   ├── validator/           # Joi validation schemas
-│   │   └── server.js            # Main server file
-│   ├── postman-test/            # Postman collections
-│   └── api-spec.yaml            # OpenAPI specification
-├── frontend/                    # React SPA
-│   ├── src/
-│   │   ├── components/          # Reusable UI components
-│   │   ├── pages/               # Page components
-│   │   ├── hooks/               # Custom React hooks
-│   │   ├── contexts/            # React contexts
-│   │   └── services/            # API service functions
-│   ├── public/                  # Static assets
-│   └── screenshots/             # Screenshot images (to be added)
-├── README.md                    # This file
-└── .gitignore                   # Git ignore rules
-```
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
-
-## 👥 Acknowledgments
-
-- **DEFRA 2024**: Emission factors data source
-- **Upstash**: Redis hosting service
-- **OpenAPI Initiative**: API documentation standard
-- **radix-ui**: Accessible UI components
-
-## 📞 Support
-
-For questions or support:
-- Create an issue on GitHub
-- Review the API documentation
-- Check the Postman collections for API examples
-
----
 
 *Made with ❤️ for a more sustainable future*
