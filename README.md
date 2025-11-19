@@ -131,24 +131,6 @@ A comprehensive personal carbon footprint tracker **built with MERN Stack** that
    npm run dev
    ```
    Frontend will start on http://localhost:5173
-
-7. **Build for Production** (Optional)
-   ```bash
-   # Frontend build
-   cd frontend
-   npm run build
-
-   # Backend doesn't need building, use npm run start
-   cd ../backend
-   npm run start
-   ```
-
-
-### Frontend Testing
-```bash
-cd frontend
-npm run lint     # Lint code
-npm run preview  # Preview production build
 ```
 
 *Made with ❤️ for a more sustainable future*
