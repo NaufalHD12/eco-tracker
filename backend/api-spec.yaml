@@ -6,7 +6,6 @@ info:
 servers:
   - url: http://localhost:5000/api
     description: Development server
-
 paths:
   /auth/login:
     post:

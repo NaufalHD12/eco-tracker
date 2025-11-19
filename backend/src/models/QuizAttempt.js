@@ -97,7 +97,7 @@ const quizAttemptSchema = new mongoose.Schema({
   toObject: {virtuals: true},
 });
 
-quizAttemptSchema.index({user: 1, quiz: 1}, {unique: true});
+quizAttemptSchema.index({user: 1, quiz: 1}); // Allow multiple attempts per user per quiz
 quizAttemptSchema.index({user: 1, status: 1});
 quizAttemptSchema.index({quiz: 1, score: -1});
 quizAttemptSchema.index({createdAt: -1});

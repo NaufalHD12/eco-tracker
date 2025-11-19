@@ -1,5 +1,6 @@
 import Activity from '../models/Activity.js';
 import User from '../models/User.js';
+import {calculateMonthlySavingsTrees} from '../utils/treeCalculator.js';
 
 /**
  * Get dashboard data with aggregated emissions
@@ -70,8 +71,14 @@ export const getDashboard = async (req, res) => {
       Math.round((totalEmission / periodDays) * 100) / 100 :
       0;
 
-    // Calculate total trees (simplified: 1 tree absorbs ~50kg CO2 per year)
-    const totalTrees = Math.floor(totalEmission / 50);
+    // Calculate trees based on period type
+    let totalTrees = user.totalTrees || 0; // Start with already awarded trees
+
+    // Only calculate savings-based trees for monthly period
+    if (period === 'monthly' && user.targetEmission > 0) {
+      const monthlySavingsTrees = calculateMonthlySavingsTrees(user.targetEmission, totalEmission);
+      totalTrees += monthlySavingsTrees;
+    }
 
     // Get category breakdown
     const categoryBreakdown = await Activity.aggregate([

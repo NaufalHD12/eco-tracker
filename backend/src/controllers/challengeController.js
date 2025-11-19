@@ -2,6 +2,8 @@ import createHttpError from 'http-errors';
 import Challenge from '../models/Challenge.js';
 import ChallengeParticipant from '../models/ChallengeParticipant.js';
 import Activity from '../models/Activity.js';
+import User from '../models/User.js';
+import {createTreeEarningMessage} from '../utils/treeCalculator.js';
 
 /**
  * Get all challenges with filtering and pagination
@@ -438,6 +440,87 @@ export const getChallengeLeaderboard = async (req, res) => {
     const statusCode = error.statusCode || 500;
     res.status(statusCode).json({
       message: error.message || 'Failed to retrieve leaderboard',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+/**
+ * Complete a challenge and claim rewards
+ * @route POST /api/challenges/:id/complete
+ * @access Private
+ */
+export const completeChallenge = async (req, res) => {
+  try {
+    const {id} = req.params;
+    const userId = req.user.userId;
+
+    const challenge = await Challenge.findById(id);
+    if (!challenge) {
+      throw createHttpError(404, 'Challenge not found');
+    }
+
+    // Check if challenge can be completed
+    if (challenge.status !== 'completed') {
+      throw createHttpError(400, 'Challenge is not eligible for completion');
+    }
+
+    const participation = await ChallengeParticipant.findOne({
+      user: userId,
+      challenge: id,
+      status: 'active', // Must be actively participating
+    });
+
+    if (!participation) {
+      throw createHttpError(404, 'You are not an active participant in this challenge');
+    }
+
+    // Award trees if already completed (prevent double claiming)
+    if (participation.claimedReward) {
+      throw createHttpError(409, 'Rewards for this challenge have already been claimed');
+    }
+
+    const treesEarned = challenge.rewards.trees || 0;
+    if (treesEarned > 0) {
+      // Update user total trees
+      await User.findByIdAndUpdate(userId, {
+        $inc: {totalTrees: treesEarned},
+      });
+
+      // Mark reward as claimed
+      participation.claimedReward = true;
+      await participation.save();
+
+      const message = createTreeEarningMessage(treesEarned, 'challenge');
+
+      res.status(200).json({
+        message: 'Challenge completed successfully!',
+        reward: {
+          trees: treesEarned,
+          description: challenge.rewards.description,
+          message,
+        },
+      });
+    } else {
+      // No trees to award
+      participation.claimedReward = true;
+      await participation.save();
+
+      res.status(200).json({
+        message: 'Challenge completed successfully!',
+        reward: {
+          trees: 0,
+          description: challenge.rewards.description,
+        },
+      });
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Complete challenge error:', error);
+    }
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({
+      message: error.message || 'Failed to complete challenge',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }

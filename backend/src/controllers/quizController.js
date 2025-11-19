@@ -31,14 +31,19 @@ export const getQuizzes = async (req, res) => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const recentAttempts = await QuizAttempt.find({
+    // Get all completed attempts for previous attempt info
+    const allCompletedAttempts = await QuizAttempt.find({
       user: userId,
       status: 'completed',
-      completedAt: {$gte: thirtyDaysAgo},
-    }).distinct('quiz');
+    });
 
-    // Exclude recently completed quizzes
-    filter._id = {$nin: recentAttempts};
+    // Filter to get recent attempts for cooldown logic
+    const recentAttempts = allCompletedAttempts.filter((attempt) =>
+      attempt.completedAt >= thirtyDaysAgo,
+    );
+
+    // Exclude recently completed quizzes from filtered list
+    filter._id = {$nin: recentAttempts.map((attempt) => attempt.quiz)};
 
     const sort = {};
     sort[sortBy] = order === 'desc' ? -1 : 1;
@@ -116,38 +121,70 @@ export const getActiveQuizzes = async (req, res) => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const recentAttempts = await QuizAttempt.find({
+    // Get all completed attempts for previous attempt info
+    const allCompletedAttempts = await QuizAttempt.find({
       user: userId,
       status: 'completed',
-      completedAt: {$gte: thirtyDaysAgo},
-    }).distinct('quiz');
+    });
 
-    // Get active quizzes excluding recently completed ones
-    const quizzes = await Quiz.find({
+    // Filter to get recent attempts for cooldown logic
+    const recentAttempts = allCompletedAttempts.filter((attempt) =>
+      attempt.completedAt >= thirtyDaysAgo,
+    );
+
+    // Get all active quizzes
+    const allActiveQuizzes = await Quiz.find({
       isActive: true,
-      _id: {$nin: recentAttempts},
     })
         .populate('createdBy', 'name email')
         .select('-questions')
         .sort({createdAt: -1});
 
-    // Calculate next available quiz date
+    // Filter quizzes and add attempt info
+    const quizzesWithAttempts = allActiveQuizzes.map((quiz) => {
+      const recentAttempt = recentAttempts.find((attempt) =>
+        attempt.quiz.toString() === quiz._id.toString(),
+      );
+
+      const quizObj = quiz.toObject();
+
+      if (recentAttempt) {
+        // Quiz was completed recently - don't include it
+        return null;
+      } else {
+        // Check if user has any completed attempt (including old ones)
+        const anyAttempt = allCompletedAttempts.find((attempt) =>
+          attempt.quiz.toString() === quiz._id.toString(),
+        );
+
+        if (anyAttempt) {
+          // User has completed this quiz before - can retake
+          quizObj.previousAttempt = {
+            score: anyAttempt.score,
+            percentage: anyAttempt.percentage,
+            grade: anyAttempt.grade,
+            completedAt: anyAttempt.completedAt,
+          };
+        }
+        return quizObj;
+      }
+    }).filter((quiz) => quiz !== null);
+
+    // Calculate next available quiz date (when first recently completed quiz becomes available)
     let nextAvailableDate = null;
     if (recentAttempts.length > 0) {
-      const latestAttempt = await QuizAttempt.findOne({
-        user: userId,
-        quiz: {$in: recentAttempts},
-      }).sort({completedAt: -1});
+      // Find the earliest completion time among recently completed quizzes
+      const earliestCompletedAt = recentAttempts.reduce((earliest, attempt) => {
+        return new Date(attempt.completedAt) < new Date(earliest) ? attempt.completedAt : earliest;
+      }, recentAttempts[0].completedAt);
 
-      if (latestAttempt) {
-        nextAvailableDate = new Date(latestAttempt.completedAt);
-        nextAvailableDate.setDate(nextAvailableDate.getDate() + 30);
-      }
+      nextAvailableDate = new Date(earliestCompletedAt);
+      nextAvailableDate.setDate(nextAvailableDate.getDate() + 30);
     }
 
     const response = {
       message: 'Active quizzes retrieved successfully',
-      quizzes,
+      quizzes: quizzesWithAttempts,
     };
 
     if (recentAttempts.length > 0) {
@@ -357,10 +394,11 @@ export const startQuizAttempt = async (req, res) => {
       throw createHttpError(400, 'Quiz is not available');
     }
 
-    // Check if user already has a completed attempt
+    // Check if user has an existing in-progress attempt
     let attempt = await QuizAttempt.findOne({
       user: userId,
       quiz: id,
+      status: 'in_progress',
     });
 
     if (!attempt) {
@@ -371,9 +409,8 @@ export const startQuizAttempt = async (req, res) => {
         status: 'in_progress',
       });
       await attempt.save();
-    } else if (attempt.status === 'completed') {
-      throw createHttpError(409, 'Quiz already completed. Cannot retake.');
     }
+    // If there's an in-progress attempt, continue with it
 
     res.status(200).json({
       message: 'Quiz attempt started successfully',
@@ -412,18 +449,15 @@ export const submitQuiz = async (req, res) => {
       throw createHttpError(404, 'Quiz not found');
     }
 
-    // Get or create attempt
+    // Find the in-progress attempt
     const attempt = await QuizAttempt.findOne({
       user: userId,
       quiz: id,
+      status: 'in_progress',
     });
 
     if (!attempt) {
       throw createHttpError(400, 'No active quiz attempt found');
-    }
-
-    if (attempt.status === 'completed') {
-      throw createHttpError(409, 'Quiz already completed');
     }
 
     // Create question map for efficient lookup
@@ -597,20 +631,26 @@ export const getUserQuizStats = async (req, res) => {
       passedCount: 0,
     };
 
-    // Get recent attempts
+    // Get recent attempts with quiz population
     const recentAttempts = await QuizAttempt.find({
       user: userId,
       status: 'completed',
     })
         .populate('quiz', 'title category difficulty totalQuestions totalPoints')
         .sort({completedAt: -1})
-        .limit(5)
+        .limit(10) // Get more to account for potential populated failures
         .select('score percentage grade completedAt quiz correctAnswers totalQuestions');
+
+    // Filter out attempts where quiz population failed (orphaned records)
+    const validAttempts = recentAttempts.filter((attempt) => attempt.quiz !== null);
+
+    // Limit to 5 valid attempts
+    const limitedAttempts = validAttempts.slice(0, 5);
 
     res.status(200).json({
       message: 'User quiz statistics retrieved successfully',
       statistics: userStats,
-      recentAttempts,
+      recentAttempts: limitedAttempts,
     });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {

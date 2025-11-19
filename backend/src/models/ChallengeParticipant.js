@@ -59,6 +59,10 @@ const challengeParticipantSchema = new mongoose.Schema({
     min: [0, 'Progress cannot be negative'],
     max: [100, 'Progress cannot exceed 100'],
   },
+  claimedReward: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
   toJSON: {virtuals: true},

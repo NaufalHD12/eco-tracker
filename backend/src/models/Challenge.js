@@ -70,6 +70,11 @@ const challengeSchema = new mongoose.Schema({
       default: 0,
       min: [0, 'Points cannot be negative'],
     },
+    trees: {
+      type: Number,
+      default: 0,
+      min: [0, 'Trees cannot be negative'],
+    },
     badge: {
       type: String,
       trim: true,
