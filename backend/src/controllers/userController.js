@@ -53,10 +53,12 @@ export const refreshToken = async (req, res) => {
         message: 'Token refreshed successfully',
         accessToken,
       });
-
     } catch (tokenError) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('Refresh token verification error:', tokenError);
+        console.error('Refresh token verification error:', tokenError.name, tokenError.message);
+        if (tokenError.name === 'TokenExpiredError') {
+          console.log('Refresh token expired at:', tokenError.expiredAt);
+        }
       }
       return res.status(401).json({
         message: 'Invalid refresh token',

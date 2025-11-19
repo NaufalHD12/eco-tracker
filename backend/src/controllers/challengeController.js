@@ -48,9 +48,24 @@ export const getChallenges = async (req, res) => {
       hasPrev: page > 1,
     };
 
+    // Add participation data for each challenge
+    const userId = req.user.userId;
+    const challengesWithParticipation = await Promise.all(
+        challenges.map(async (challenge) => {
+          const participation = await ChallengeParticipant.findOne({
+            user: userId,
+            challenge: challenge._id,
+          }).select('status emissionSaved points progress streakDays');
+
+          const challengeData = challenge.toObject();
+          challengeData.participation = participation;
+          return challengeData;
+        }),
+    );
+
     res.status(200).json({
       message: 'Challenges retrieved successfully',
-      challenges,
+      challenges: challengesWithParticipation,
       pagination,
     });
   } catch (error) {
@@ -71,13 +86,28 @@ export const getChallenges = async (req, res) => {
  */
 export const getActiveChallenges = async (req, res) => {
   try {
+    const userId = req.user.userId;
     const challenges = await Challenge.findActive()
         .populate('createdBy', 'name email')
         .select('-__v');
 
+    // Add participation data for each challenge
+    const challengesWithParticipation = await Promise.all(
+        challenges.map(async (challenge) => {
+          const participation = await ChallengeParticipant.findOne({
+            user: userId,
+            challenge: challenge._id,
+          }).select('status emissionSaved points progress streakDays');
+
+          const challengeData = challenge.toObject();
+          challengeData.participation = participation;
+          return challengeData;
+        }),
+    );
+
     res.status(200).json({
       message: 'Active challenges retrieved successfully',
-      challenges,
+      challenges: challengesWithParticipation,
     });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
@@ -110,7 +140,7 @@ export const getChallenge = async (req, res) => {
     const participation = await ChallengeParticipant.findOne({
       user: userId,
       challenge: id,
-    }).select('status emissionSaved points progress');
+    }).select('status emissionSaved points progress streakDays');
 
     const challengeData = challenge.toObject();
     challengeData.participation = participation;
@@ -272,7 +302,20 @@ export const joinChallenge = async (req, res) => {
     });
 
     if (existingParticipation) {
-      throw createHttpError(409, 'Already joined this challenge');
+      if (existingParticipation.status === 'active') {
+        throw createHttpError(409, 'Already joined this challenge');
+      } else if (existingParticipation.status === 'dropped') {
+        // Reactivate dropped participation
+        existingParticipation.status = 'active';
+        await existingParticipation.save();
+        await Challenge.findByIdAndUpdate(id, {
+          $inc: {totalParticipants: 1},
+        });
+        res.status(200).json({
+          message: 'Successfully rejoined challenge',
+        });
+        return;
+      }
     }
 
     if (challenge.maxParticipants && challenge.totalParticipants >= challenge.maxParticipants) {
@@ -300,6 +343,55 @@ export const joinChallenge = async (req, res) => {
     const statusCode = error.statusCode || 500;
     res.status(statusCode).json({
       message: error.message || 'Failed to join challenge',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+/**
+ * Leave a challenge
+ * @route POST /api/challenges/:id/drop
+ * @access Private
+ */
+export const dropChallenge = async (req, res) => {
+  try {
+    const {id} = req.params;
+    const userId = req.user.userId;
+
+    const participant = await ChallengeParticipant.findOne({
+      user: userId,
+      challenge: id,
+    });
+
+    if (!participant) {
+      throw createHttpError(404, 'You are not participating in this challenge');
+    }
+
+    if (participant.status !== 'active') {
+      throw createHttpError(400, 'Participation is not active');
+    }
+
+    // Update participant status to 'dropped'
+    participant.status = 'dropped';
+    await participant.save();
+
+    // Decrease totalParticipants
+    await Challenge.findByIdAndUpdate(id, {
+      $inc: {totalParticipants: -1},
+    });
+
+    // Note: We keep the user's emissionSaved for ranking purposes
+
+    res.status(200).json({
+      message: 'Successfully left the challenge',
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Drop challenge error:', error);
+    }
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({
+      message: error.message || 'Failed to leave challenge',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }

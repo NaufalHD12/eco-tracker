@@ -1,7 +1,7 @@
 import createHttpError from 'http-errors';
 import Quiz from '../models/Quiz.js';
 import QuizAttempt from '../models/QuizAttempt.js';
-import {invalidateQuizCache} from '../middleware/cache.js';
+
 
 /**
  * Get all quizzes with filtering and pagination
@@ -253,9 +253,6 @@ export const createQuiz = async (req, res) => {
 
     await quiz.populate('createdBy', 'name email');
 
-    // Invalidate cache when quiz is created
-    await invalidateQuizCache();
-
     res.status(201).json({
       message: 'Quiz created successfully',
       quiz,
@@ -294,9 +291,6 @@ export const updateQuiz = async (req, res) => {
       throw createHttpError(404, 'Quiz not found');
     }
 
-    // Invalidate cache when quiz is updated
-    await invalidateQuizCache();
-
     res.status(200).json({
       message: 'Quiz updated successfully',
       quiz,
@@ -330,9 +324,6 @@ export const deleteQuiz = async (req, res) => {
 
     // Remove all attempts for this quiz
     await QuizAttempt.deleteMany({quiz: id});
-
-    // Invalidate cache when quiz is deleted
-    await invalidateQuizCache();
 
     res.status(204).send();
   } catch (error) {

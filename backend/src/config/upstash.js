@@ -138,10 +138,26 @@ export const deleteCache = async (key) => {
   }
 };
 
+const getKeysMatchingPattern = async (pattern) => {
+  const redis = getRedis();
+  let cursor = 0;
+  const allKeys = [];
+
+  do {
+    const result = await redis.scan(cursor, {count: 1000});
+    cursor = parseInt(result[0]);
+    allKeys.push(...result[1]);
+  } while (cursor !== 0);
+
+  const regex = new RegExp(pattern.replace(/\*/g, '.*').replace(/\?/g, '.'));
+  return allKeys.filter((key) => regex.test(key));
+};
+
 export const invalidateCachePattern = async (pattern) => {
   try {
     const redis = getRedis();
-    const keys = await redis.keys(pattern);
+    const keys = await getKeysMatchingPattern(pattern);
+
     if (keys.length > 0) {
       await redis.del(keys);
       if (process.env.NODE_ENV === 'development') {

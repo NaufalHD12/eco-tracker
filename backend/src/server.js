@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Rate limiting middleware (applied to all routes)
-app.use(ipRateLimiter);
+// app.use(ipRateLimiter);
 
 // Middleware
 app.use(cors({
@@ -22,7 +22,8 @@ app.use(cors({
 app.use(express.json());
 
 // Routes with user-based rate limiting and caching (applied within routes after auth)
-app.use('/api', userRateLimiter, routes);
+// app.use('/api', userRateLimiter, routes);
+app.use('/api', routes);
 
 // Error handling middleware
 app.use(handleValidationError);

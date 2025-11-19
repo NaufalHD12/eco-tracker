@@ -13,7 +13,6 @@ import {
   getQuizStats,
 } from '../controllers/quizController.js';
 import {protect} from '../middleware/auth.js';
-import {quizCacheMiddleware} from '../middleware/cache.js';
 import {
   validateCreateQuiz,
   validateUpdateQuiz,
@@ -25,9 +24,6 @@ const router = express.Router();
 
 // All quiz routes require authentication
 router.use(protect);
-
-// Apply cache middleware after authentication for GET requests
-router.use(quizCacheMiddleware);
 
 router.get('/', validateQuizQuery, getQuizzes);
 router.get('/active', getActiveQuizzes);

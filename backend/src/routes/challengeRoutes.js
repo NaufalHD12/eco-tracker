@@ -7,6 +7,7 @@ import {
   updateChallenge,
   deleteChallenge,
   joinChallenge,
+  dropChallenge,
   getChallengeLeaderboard,
   updateChallengeProgress,
 } from '../controllers/challengeController.js';
@@ -30,6 +31,7 @@ router.get('/:id', getChallenge);
 router.put('/:id', validateUpdateChallenge, updateChallenge);
 router.delete('/:id', deleteChallenge);
 router.post('/:id/join', joinChallenge);
+router.post('/:id/drop', dropChallenge);
 router.get('/:id/leaderboard', validateLeaderboardQuery, getChallengeLeaderboard);
 router.post('/:id/update-progress', updateChallengeProgress);
 

@@ -1,6 +1,5 @@
 import Activity from '../models/Activity.js';
 import {calculateActivityEmission} from '../utils/emissionCalculator.js';
-import {invalidateDashboardCache} from '../middleware/cache.js';
 
 const buildFilterQuery = (userId, query) => {
   const filter = {user: userId};
@@ -171,9 +170,6 @@ export const createActivity = async (req, res) => {
 
     await activity.populate('user', 'name email');
 
-    // Invalidate dashboard cache when activity is created
-    await invalidateDashboardCache(req.user.userId);
-
     res.status(201).json({
       message: 'Activity logged successfully',
       activity,
@@ -242,9 +238,6 @@ export const updateActivity = async (req, res) => {
         },
     ).populate('user', 'name email');
 
-    // Invalidate dashboard cache when activity is updated
-    await invalidateDashboardCache(req.user.userId);
-
     res.status(200).json({
       message: 'Activity updated successfully',
       activity: updatedActivity,
@@ -287,9 +280,6 @@ export const deleteActivity = async (req, res) => {
     if (!activity) {
       return res.status(404).json({message: 'Activity not found'});
     }
-
-    // Invalidate dashboard cache when activity is deleted
-    await invalidateDashboardCache(req.user.userId);
 
     res.status(204).send();
   } catch (error) {
